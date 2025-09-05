@@ -51,7 +51,7 @@ import {
   computed,
   onMounted,
   onUnmounted,
-  nextTick,
+  watch, // 👈 Sudah ditambahkan
 } from "vue";
 import { Codemirror } from "vue-codemirror";
 import { oneDark } from "@codemirror/theme-one-dark";
@@ -75,15 +75,48 @@ export default defineComponent({
   setup() {
     const tabs = ["HTML", "CSS", "JavaScript"];
     const activeTab = ref("HTML");
-    const htmlCode = ref(codes.html);
-    const cssCode = ref(codes.css);
-    const jsCode = ref(codes.js);
+
+    // Inisialisasi ref dengan nilai kosong, akan diisi saat onMounted
+    const htmlCode = ref("");
+    const cssCode = ref("");
+    const jsCode = ref("");
 
     const selectedFramework = ref("Bootstrap");
     const isLoading = ref(false);
     const previewWidthPercent = ref(50);
     const isResizing = ref(false);
     const previewDimensions = ref("0px × 0px");
+
+    // 👇 Fungsi untuk menyimpan data ke Session Storage
+    const saveToSessionStorage = () => {
+      sessionStorage.setItem("htmlCode", htmlCode.value);
+      sessionStorage.setItem("cssCode", cssCode.value);
+      sessionStorage.setItem("jsCode", jsCode.value);
+    };
+
+    // 👇 Fungsi untuk memuat data dari Session Storage
+    const loadFromSessionStorage = () => {
+      const savedHtml = sessionStorage.getItem("htmlCode");
+      const savedCss = sessionStorage.getItem("cssCode");
+      const savedJs = sessionStorage.getItem("jsCode");
+
+      // Jika ada data yang tersimpan, gunakan itu. Jika tidak, gunakan kode default.
+      htmlCode.value = savedHtml || codes.html;
+      cssCode.value = savedCss || codes.css;
+      jsCode.value = savedJs || codes.js;
+
+      // Simpan juga framework yang terakhir dipilih
+      const savedFramework = sessionStorage.getItem("selectedFramework");
+      if (savedFramework) {
+        selectedFramework.value = savedFramework;
+      }
+    };
+
+    // 👇 Watcher untuk memantau setiap perubahan dan menyimpannya secara otomatis
+    watch([htmlCode, cssCode, jsCode, selectedFramework], () => {
+      saveToSessionStorage();
+      sessionStorage.setItem("selectedFramework", selectedFramework.value);
+    });
 
     const htmlExtensions = computed(() => [
       html(),
@@ -222,6 +255,9 @@ export default defineComponent({
     };
 
     onMounted(() => {
+      // 👇 Panggil fungsi pemuatan saat komponen pertama kali di-mount
+      loadFromSessionStorage();
+
       document.addEventListener("mousemove", handleGlobalMouseMove, {
         passive: false,
       });
