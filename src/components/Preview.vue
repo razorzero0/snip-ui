@@ -4,15 +4,15 @@
     :style="{ width: previewWidth }"
     ref="previewContainer"
   >
-    <div class="flex border-b bg-gray-100 items-center px-4 py-2">
-      <span class="text-sm font-medium text-gray-700">Preview</span>
-      <div class="ml-auto flex items-center gap-2">
-        <label class="text-xs text-gray-600 font-medium">Framework:</label>
+    <div
+      class="flex items-center justify-between border-b border-gray-200 bg-gray-100 px-4 py-2"
+    >
+      <div class="flex items-center gap-2">
         <div class="relative">
           <select
             :value="selectedFramework"
             @change="$emit('update:selected-framework', $event.target.value)"
-            class="text-xs bg-white border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="rounded border border-gray-300 bg-white px-2 py-1 text-xs focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
             :disabled="isLoading"
           >
             <option
@@ -25,33 +25,43 @@
           </select>
           <div
             v-if="isLoading"
-            class="absolute inset-0 bg-white bg-opacity-90 rounded flex items-center justify-center"
+            class="absolute inset-0 flex items-center justify-center rounded bg-white bg-opacity-90"
           >
             <div
-              class="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"
+              class="h-3 w-3 animate-spin rounded-full border-b-2 border-blue-600"
             ></div>
           </div>
         </div>
       </div>
-      <div class="ml-4 text-xs text-gray-500 font-mono">
-        {{ previewDimensions }}
+
+      <div class="flex items-center gap-4">
+        <button
+          @click="$emit('save-code')"
+          class="rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors duration-200 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-400"
+          :disabled="isLoading"
+        >
+          Save
+        </button>
+        <div class="text-xs font-mono text-gray-500">
+          {{ previewDimensions }}
+        </div>
       </div>
     </div>
-    <div class="flex-1 overflow-auto bg-white relative" ref="previewContent">
+    <div class="relative flex-1 overflow-auto bg-white" ref="previewContent">
       <div
         v-if="isLoading"
-        class="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 z-10 flex items-center justify-center animate-pulse"
+        class="absolute inset-0 z-10 flex animate-pulse items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50"
       >
         <div class="text-center">
           <div class="relative">
             <div
-              class="w-16 h-16 border-4 border-blue-200 rounded-full animate-spin"
+              class="h-16 w-16 animate-spin rounded-full border-4 border-blue-200"
             ></div>
             <div
-              class="absolute top-0 left-0 w-16 h-16 border-4 border-transparent border-t-blue-600 rounded-full animate-spin"
+              class="absolute top-0 left-0 h-16 w-16 animate-spin rounded-full border-4 border-transparent border-t-blue-600"
             ></div>
             <div
-              class="absolute top-2 left-2 w-12 h-12 border-4 border-transparent border-t-purple-500 rounded-full animate-spin"
+              class="absolute top-2 left-2 h-12 w-12 animate-spin rounded-full border-4 border-transparent border-t-purple-500"
               style="animation-duration: 0.8s; animation-direction: reverse"
             ></div>
           </div>
@@ -68,16 +78,16 @@
               >.</span
             >
           </div>
-          <div class="mt-3 w-32 h-1 bg-gray-200 rounded-full overflow-hidden">
+          <div class="mt-3 h-1 w-32 overflow-hidden rounded-full bg-gray-200">
             <div
-              class="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse"
+              class="h-full animate-pulse rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
               style="animation-duration: 1.5s"
             ></div>
           </div>
         </div>
       </div>
       <iframe
-        class="w-full h-full border-0 transition-opacity duration-300"
+        class="h-full w-full border-0 transition-opacity duration-300"
         :class="{ 'opacity-50': isLoading }"
         :srcdoc="combinedCode"
         style="min-height: 100vh"
@@ -124,7 +134,8 @@ export default defineComponent({
       required: true,
     },
   },
-  emits: ["update:selected-framework", "dimensions-ready"],
+  // 👇 Tambahkan event 'save-code'
+  emits: ["update:selected-framework", "dimensions-ready", "save-code"],
   setup(props, { emit }) {
     const previewContainer = ref(null);
 
@@ -140,7 +151,6 @@ export default defineComponent({
     const onFrameLoad = () => updateDimensions();
     const handleWindowResize = () => updateDimensions();
 
-    // 🔹 Tambahkan watch agar update saat previewWidth berubah
     watch(
       () => props.previewWidth,
       () => {

@@ -40,6 +40,7 @@
       :preview-dimensions="previewDimensions"
       @update:selected-framework="onFrameworkChange"
       @dimensions-ready="updatePreviewDimensions"
+      @save-code="saveCode"
     />
   </div>
 </template>
@@ -51,7 +52,7 @@ import {
   computed,
   onMounted,
   onUnmounted,
-  watch, // 👈 Sudah ditambahkan
+  watch,
 } from "vue";
 import { Codemirror } from "vue-codemirror";
 import { oneDark } from "@codemirror/theme-one-dark";
@@ -76,7 +77,6 @@ export default defineComponent({
     const tabs = ["HTML", "CSS", "JavaScript"];
     const activeTab = ref("HTML");
 
-    // Inisialisasi ref dengan nilai kosong, akan diisi saat onMounted
     const htmlCode = ref("");
     const cssCode = ref("");
     const jsCode = ref("");
@@ -87,33 +87,56 @@ export default defineComponent({
     const isResizing = ref(false);
     const previewDimensions = ref("0px × 0px");
 
-    // 👇 Fungsi untuk menyimpan data ke Session Storage
     const saveToSessionStorage = () => {
       sessionStorage.setItem("htmlCode", htmlCode.value);
       sessionStorage.setItem("cssCode", cssCode.value);
       sessionStorage.setItem("jsCode", jsCode.value);
     };
 
-    // 👇 Fungsi untuk memuat data dari Session Storage
     const loadFromSessionStorage = () => {
       const savedHtml = sessionStorage.getItem("htmlCode");
       const savedCss = sessionStorage.getItem("cssCode");
       const savedJs = sessionStorage.getItem("jsCode");
 
-      // Jika ada data yang tersimpan, gunakan itu. Jika tidak, gunakan kode default.
       htmlCode.value = savedHtml || codes.html;
       cssCode.value = savedCss || codes.css;
       jsCode.value = savedJs || codes.js;
 
-      // Simpan juga framework yang terakhir dipilih
       const savedFramework = sessionStorage.getItem("selectedFramework");
       if (savedFramework) {
         selectedFramework.value = savedFramework;
       }
     };
 
-    // 👇 Watcher untuk memantau setiap perubahan dan menyimpannya secara otomatis
-    watch([htmlCode, cssCode, jsCode, selectedFramework], () => {
+    const saveCode = () => {
+      saveToSessionStorage();
+      sessionStorage.setItem("selectedFramework", selectedFramework.value);
+      const notification = document.createElement("div");
+      notification.textContent = "Code Saved!";
+      notification.className =
+        "fixed top-16 right-36 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50 transition-all duration-300 transform translate-x-full opacity-0";
+      document.body.appendChild(notification);
+      setTimeout(() => {
+        notification.style.transform = "translateX(0)";
+        notification.style.opacity = "1";
+      }, 10);
+      setTimeout(() => {
+        notification.style.transform = "translateX(100%)";
+        notification.style.opacity = "0";
+        setTimeout(() => document.body.removeChild(notification), 300);
+      }, 2000);
+    };
+
+    // 👇 Fungsi untuk menangani kombinasi tombol Ctrl + S
+    const handleSaveShortcut = (e) => {
+      // Periksa apakah 'Ctrl' atau 'Meta' (untuk Mac) ditekan, dan juga tombol 'S'
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault(); // Mencegah perilaku default browser (membuka dialog Save As)
+        saveCode(); // Panggil fungsi saveCode
+      }
+    };
+
+    watch([selectedFramework], () => {
       saveToSessionStorage();
       sessionStorage.setItem("selectedFramework", selectedFramework.value);
     });
@@ -181,7 +204,7 @@ export default defineComponent({
         const notification = document.createElement("div");
         notification.textContent = "Code copied!";
         notification.className =
-          "fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50";
+          "fixed top-16 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50";
         document.body.appendChild(notification);
         setTimeout(() => document.body.removeChild(notification), 2000);
       } catch (err) {
@@ -255,9 +278,7 @@ export default defineComponent({
     };
 
     onMounted(() => {
-      // 👇 Panggil fungsi pemuatan saat komponen pertama kali di-mount
       loadFromSessionStorage();
-
       document.addEventListener("mousemove", handleGlobalMouseMove, {
         passive: false,
       });
@@ -266,6 +287,8 @@ export default defineComponent({
       });
       window.addEventListener("resize", updatePreviewDimensions);
       updatePreviewDimensions();
+      // 👇 Tambahkan event listener untuk Ctrl + S
+      window.addEventListener("keydown", handleSaveShortcut);
     });
 
     onUnmounted(() => {
@@ -274,6 +297,8 @@ export default defineComponent({
       window.removeEventListener("resize", updatePreviewDimensions);
       const overlay = document.getElementById("resize-overlay");
       if (overlay) overlay.remove();
+      // 👇 Hapus event listener saat komponen di-unmount
+      window.removeEventListener("keydown", handleSaveShortcut);
     });
 
     return {
@@ -299,6 +324,7 @@ export default defineComponent({
       onFrameworkChange,
       previewDimensions,
       updatePreviewDimensions,
+      saveCode,
     };
   },
 });
