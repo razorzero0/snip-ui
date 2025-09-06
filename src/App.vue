@@ -87,12 +87,14 @@ export default defineComponent({
     const isResizing = ref(false);
     const previewDimensions = ref("0px × 0px");
 
+    // Fungsi untuk menyimpan data ke Session Storage
     const saveToSessionStorage = () => {
       sessionStorage.setItem("htmlCode", htmlCode.value);
       sessionStorage.setItem("cssCode", cssCode.value);
       sessionStorage.setItem("jsCode", jsCode.value);
     };
 
+    // Fungsi untuk memuat data dari Session Storage
     const loadFromSessionStorage = () => {
       const savedHtml = sessionStorage.getItem("htmlCode");
       const savedCss = sessionStorage.getItem("cssCode");
@@ -108,6 +110,7 @@ export default defineComponent({
       }
     };
 
+    // Fungsi untuk menyimpan dan menampilkan notifikasi
     const saveCode = () => {
       saveToSessionStorage();
       sessionStorage.setItem("selectedFramework", selectedFramework.value);
@@ -127,7 +130,7 @@ export default defineComponent({
       }, 2000);
     };
 
-    // 👇 Fungsi untuk menangani kombinasi tombol Ctrl + S
+    // Fungsi untuk menangani kombinasi tombol Ctrl + S
     const handleSaveShortcut = (e) => {
       // Periksa apakah 'Ctrl' atau 'Meta' (untuk Mac) ditekan, dan juga tombol 'S'
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
@@ -287,7 +290,6 @@ export default defineComponent({
       });
       window.addEventListener("resize", updatePreviewDimensions);
       updatePreviewDimensions();
-      // 👇 Tambahkan event listener untuk Ctrl + S
       window.addEventListener("keydown", handleSaveShortcut);
     });
 
@@ -297,7 +299,6 @@ export default defineComponent({
       window.removeEventListener("resize", updatePreviewDimensions);
       const overlay = document.getElementById("resize-overlay");
       if (overlay) overlay.remove();
-      // 👇 Hapus event listener saat komponen di-unmount
       window.removeEventListener("keydown", handleSaveShortcut);
     });
 
