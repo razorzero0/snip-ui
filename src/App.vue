@@ -41,6 +41,7 @@
       @update:selected-framework="onFrameworkChange"
       @dimensions-ready="updatePreviewDimensions"
       @save-code="saveCode"
+      @download-image="downloadImage"
     />
   </div>
 </template>
@@ -53,6 +54,7 @@ import {
   onMounted,
   onUnmounted,
   watch,
+  nextTick,
 } from "vue";
 import { Codemirror } from "vue-codemirror";
 import { oneDark } from "@codemirror/theme-one-dark";
@@ -70,6 +72,7 @@ import EditorTabs from "./components/EditorTabs.vue";
 import Preview from "./components/Preview.vue";
 import ResizeHandle from "./components/ResizeHandle.vue";
 import frameworks from "./utils/frameworks.js";
+import html2canvas from "html2canvas";
 
 export default defineComponent({
   components: { Codemirror, EditorTabs, Preview, ResizeHandle },
@@ -87,22 +90,47 @@ export default defineComponent({
     const isResizing = ref(false);
     const previewDimensions = ref("0px × 0px");
 
-    // Fungsi untuk menyimpan data ke Session Storage
+    const screenshotWidth = ref(1200);
+    const screenshotHeight = ref(800);
+
     const saveToSessionStorage = () => {
       sessionStorage.setItem("htmlCode", htmlCode.value);
       sessionStorage.setItem("cssCode", cssCode.value);
       sessionStorage.setItem("jsCode", jsCode.value);
     };
 
-    // Fungsi untuk memuat data dari Session Storage
     const loadFromSessionStorage = () => {
       const savedHtml = sessionStorage.getItem("htmlCode");
       const savedCss = sessionStorage.getItem("cssCode");
       const savedJs = sessionStorage.getItem("jsCode");
 
-      htmlCode.value = savedHtml || codes.html;
-      cssCode.value = savedCss || codes.css;
-      jsCode.value = savedJs || codes.js;
+      const htmlComment = `<!-- Enter your HTML code here -->`;
+      const cssComment = `/* Enter your CSS code here */`;
+      const jsComment = `// Enter your JavaScript code here`;
+
+      if (savedHtml === null) {
+        htmlCode.value = codes.html;
+      } else if (savedHtml === "") {
+        htmlCode.value = htmlComment;
+      } else {
+        htmlCode.value = savedHtml;
+      }
+
+      if (savedCss === null) {
+        cssCode.value = codes.css;
+      } else if (savedCss === "") {
+        cssCode.value = cssComment;
+      } else {
+        cssCode.value = savedCss;
+      }
+
+      if (savedJs === null) {
+        jsCode.value = codes.js;
+      } else if (savedJs === "") {
+        jsCode.value = jsComment;
+      } else {
+        jsCode.value = savedJs;
+      }
 
       const savedFramework = sessionStorage.getItem("selectedFramework");
       if (savedFramework) {
@@ -110,7 +138,6 @@ export default defineComponent({
       }
     };
 
-    // Fungsi untuk menyimpan dan menampilkan notifikasi
     const saveCode = () => {
       saveToSessionStorage();
       sessionStorage.setItem("selectedFramework", selectedFramework.value);
@@ -130,12 +157,90 @@ export default defineComponent({
       }, 2000);
     };
 
-    // Fungsi untuk menangani kombinasi tombol Ctrl + S
+    // Fungsi untuk menangani pintasan keyboard Ctrl + S
     const handleSaveShortcut = (e) => {
-      // Periksa apakah 'Ctrl' atau 'Meta' (untuk Mac) ditekan, dan juga tombol 'S'
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-        e.preventDefault(); // Mencegah perilaku default browser (membuka dialog Save As)
-        saveCode(); // Panggil fungsi saveCode
+        e.preventDefault(); // Mencegah perilaku default "Save As"
+        saveCode();
+      }
+    };
+
+    const downloadImage = async () => {
+      await nextTick();
+
+      const tempIframe = document.createElement("iframe");
+      tempIframe.style.position = "absolute";
+      tempIframe.style.top = "-9999px";
+      tempIframe.style.left = "-9999px";
+      tempIframe.style.width = `${screenshotWidth.value}px`;
+      tempIframe.style.height = `${screenshotHeight.value}px`;
+      tempIframe.style.border = "none";
+      document.body.appendChild(tempIframe);
+
+      const iframeLoaded = new Promise((resolve) => {
+        tempIframe.onload = () => {
+          resolve();
+        };
+      });
+
+      tempIframe.contentDocument.open();
+      tempIframe.contentDocument.write(combinedCode.value);
+      tempIframe.contentDocument.close();
+
+      await iframeLoaded;
+
+      try {
+        const bodyToCapture = tempIframe.contentWindow.document.body;
+
+        const canvas = await html2canvas(bodyToCapture, {
+          allowTaint: true,
+          useCORS: true,
+          width: screenshotWidth.value,
+          height: screenshotHeight.value,
+        });
+
+        const link = document.createElement("a");
+        link.href = canvas.toDataURL("image/png");
+        link.download = `code-preview-${new Date().toISOString()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        const notification = document.createElement("div");
+        notification.textContent = "Screenshot downloaded successfully! 🎉";
+        notification.className =
+          "fixed top-16 right-36 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50 transition-all duration-300 transform translate-x-full opacity-0";
+        document.body.appendChild(notification);
+        setTimeout(() => {
+          notification.style.transform = "translateX(0)";
+          notification.style.opacity = "1";
+        }, 10);
+        setTimeout(() => {
+          notification.style.transform = "translateX(100%)";
+          notification.style.opacity = "0";
+          setTimeout(() => document.body.removeChild(notification), 300);
+        }, 2000);
+      } catch (error) {
+        console.error("Gagal membuat gambar:", error);
+        const errorNotification = document.createElement("div");
+        errorNotification.textContent =
+          "Gagal mengambil screenshot. Cek konsol untuk detailnya. ❌";
+        errorNotification.className =
+          "fixed top-16 right-36 bg-red-500 text-white px-4 py-2 rounded shadow-lg z-50 transition-all duration-300 transform translate-x-full opacity-0";
+        document.body.appendChild(errorNotification);
+        setTimeout(() => {
+          errorNotification.style.transform = "translateX(0)";
+          errorNotification.style.opacity = "1";
+        }, 10);
+        setTimeout(() => {
+          errorNotification.style.transform = "translateX(100%)";
+          errorNotification.style.opacity = "0";
+          setTimeout(() => document.body.removeChild(errorNotification), 300);
+        }, 3000);
+      } finally {
+        if (tempIframe) {
+          document.body.removeChild(tempIframe);
+        }
       }
     };
 
@@ -176,6 +281,7 @@ export default defineComponent({
       const jsScript = framework?.js
         ? `<script src="${framework.js}"><\/script>`
         : "";
+
       return `
         <!DOCTYPE html>
         <html lang="en">
@@ -326,6 +432,7 @@ export default defineComponent({
       previewDimensions,
       updatePreviewDimensions,
       saveCode,
+      downloadImage,
     };
   },
 });

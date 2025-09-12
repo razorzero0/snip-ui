@@ -8,6 +8,13 @@
       class="flex items-center justify-between border-b border-gray-200 bg-gray-100 px-4 py-2"
     >
       <div class="flex items-center gap-2">
+        <button
+          @click="$emit('download-image')"
+          class="rounded-md bg-purple-500 px-4 py-2 text-sm font-medium text-white transition-colors duration-200 hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-400"
+          :disabled="isLoading"
+        >
+          Screenshot
+        </button>
         <div class="relative">
           <select
             :value="selectedFramework"
@@ -134,8 +141,13 @@ export default defineComponent({
       required: true,
     },
   },
-  // 👇 Tambahkan event 'save-code'
-  emits: ["update:selected-framework", "dimensions-ready", "save-code"],
+  // Tambahkan event 'download-image'
+  emits: [
+    "update:selected-framework",
+    "dimensions-ready",
+    "save-code",
+    "download-image",
+  ],
   setup(props, { emit }) {
     const previewContainer = ref(null);
 
