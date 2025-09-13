@@ -93,18 +93,18 @@ export default defineComponent({
     const screenshotWidth = ref(1200);
     const screenshotHeight = ref(800);
 
-    const saveToSessionStorage = () => {
-      sessionStorage.setItem("htmlCode", htmlCode.value);
-      sessionStorage.setItem("cssCode", cssCode.value);
-      sessionStorage.setItem("jsCode", jsCode.value);
+    const saveToLocalStorage = () => {
+      localStorage.setItem("htmlCode", htmlCode.value);
+      localStorage.setItem("cssCode", cssCode.value);
+      localStorage.setItem("jsCode", jsCode.value);
     };
 
-    const loadFromSessionStorage = () => {
-      const savedHtml = sessionStorage.getItem("htmlCode");
-      const savedCss = sessionStorage.getItem("cssCode");
-      const savedJs = sessionStorage.getItem("jsCode");
+    const loadFromLocalStorage = () => {
+      const savedHtml = localStorage.getItem("htmlCode");
+      const savedCss = localStorage.getItem("cssCode");
+      const savedJs = localStorage.getItem("jsCode");
 
-      const htmlComment = `<!-- Enter your HTML code here -->`;
+      const htmlComment = ``;
       const cssComment = `/* Enter your CSS code here */`;
       const jsComment = `// Enter your JavaScript code here`;
 
@@ -132,15 +132,15 @@ export default defineComponent({
         jsCode.value = savedJs;
       }
 
-      const savedFramework = sessionStorage.getItem("selectedFramework");
+      const savedFramework = localStorage.getItem("selectedFramework");
       if (savedFramework) {
         selectedFramework.value = savedFramework;
       }
     };
 
     const saveCode = () => {
-      saveToSessionStorage();
-      sessionStorage.setItem("selectedFramework", selectedFramework.value);
+      saveToLocalStorage();
+      localStorage.setItem("selectedFramework", selectedFramework.value);
       const notification = document.createElement("div");
       notification.textContent = "Code Saved!";
       notification.className =
@@ -245,8 +245,8 @@ export default defineComponent({
     };
 
     watch([selectedFramework], () => {
-      saveToSessionStorage();
-      sessionStorage.setItem("selectedFramework", selectedFramework.value);
+      saveToLocalStorage();
+      localStorage.setItem("selectedFramework", selectedFramework.value);
     });
 
     const htmlExtensions = computed(() => [
@@ -387,7 +387,7 @@ export default defineComponent({
     };
 
     onMounted(() => {
-      loadFromSessionStorage();
+      loadFromLocalStorage();
       document.addEventListener("mousemove", handleGlobalMouseMove, {
         passive: false,
       });
