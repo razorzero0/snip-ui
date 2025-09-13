@@ -104,7 +104,7 @@ export default defineComponent({
       const savedCss = localStorage.getItem("cssCode");
       const savedJs = localStorage.getItem("jsCode");
 
-      const htmlComment = ``;
+      const htmlComment = `<!-- Enter your HTML code here -->`;
       const cssComment = `/* Enter your CSS code here */`;
       const jsComment = `// Enter your JavaScript code here`;
 
